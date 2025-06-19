@@ -73,7 +73,7 @@ class SeguimientoPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Foto del tweet (opcional)
-            TextFormField(
+            /*TextFormField(
               keyboardType: TextInputType.url,
               controller: fotoController,
               decoration: const InputDecoration(
@@ -82,7 +82,7 @@ class SeguimientoPage extends StatelessWidget {
                 hintText: 'https://example.com/foto.jpg',
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 20),*/
 
             // Botón de guardar tweet
             Mutation(

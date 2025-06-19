@@ -139,7 +139,7 @@ class LogsPage extends StatelessWidget {
         return ListView.builder(
           itemCount: tweets.length,
           itemBuilder: (context, index) {
-            final tweet = tweets[index];
+            final tweet = tweets[tweets.length - 1 - index]; //[index]
             final id = int.parse(tweet['id'].toString());
             final contenido = tweet['contenido'] ?? '';
             final futbolista = tweet['futbolista'] ?? '';
@@ -160,7 +160,6 @@ class LogsPage extends StatelessWidget {
                       })
                       .join('\n');
 
-            // Obtener tipo y cantidad de reacciones
             String reactionsText = reactions.isEmpty
                 ? "No hay reacciones aún."
                 : reactions
@@ -171,11 +170,12 @@ class LogsPage extends StatelessWidget {
                       .join(', ');
 
             return Card(
-              elevation: 4,
+              elevation: 8,
               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
+              color: Colors.black87, // Fondo oscuro para las tarjetas
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -187,7 +187,10 @@ class LogsPage extends StatelessWidget {
                         Text(
                           postedBy,
                           style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                         ),
                         const Spacer(),
                         Text(
@@ -211,13 +214,14 @@ class LogsPage extends StatelessWidget {
                     // Futbolista y contenido
                     Text(
                       futbolista,
-                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[300]),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       contenido,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -225,7 +229,10 @@ class LogsPage extends StatelessWidget {
                     // Reacciones actuales
                     Text(
                       "Reacciones: $reactionsText",
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.purple,
+                      ),
                     ),
                     const SizedBox(height: 6),
 
@@ -238,41 +245,19 @@ class LogsPage extends StatelessWidget {
                       },
                     ),
 
-                    // Botón para eliminar tweet
-                    /*Mutation(
-                      options: MutationOptions(
-                        document: gql(deleteTweetMutation),
-                        onCompleted: (_) {
-                          refetch?.call(); // Vuelve a cargar los tweets
-                        },
-                        onError: (error) {
-                          print(
-                            'Error al eliminar el tweet: ${error?.graphqlErrors[0].message}',
-                          );
-                        },
-                      ),
-                      builder: (runMutation, result) {
-                        return ElevatedButton.icon(
-                          onPressed: () {
-                            runMutation({"tweetId": id});
-                          },
-                          icon: const Icon(Icons.delete),
-                          label: const Text("Eliminar Tweet"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 6),*/
-
                     // Comentarios
                     const Text(
                       "Comentarios:",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Text(commentsText, style: const TextStyle(fontSize: 14)),
+                    Text(
+                      commentsText,
+                      style: const TextStyle(fontSize: 14, color: Colors.white),
+                    ),
                     const SizedBox(height: 12),
 
                     // Formulario de comentarios
@@ -283,7 +268,7 @@ class LogsPage extends StatelessWidget {
                       },
                     ),
 
-                    // Botón para eliminar tweet
+                    //Botón para eliminar tweet
                     Mutation(
                       options: MutationOptions(
                         document: gql(deleteTweetMutation),
@@ -317,6 +302,106 @@ class LogsPage extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+class ReactionForm extends StatefulWidget {
+  final int tweetId;
+  final List<dynamic> reactions;
+  final VoidCallback onReactionChanged;
+
+  const ReactionForm({
+    required this.tweetId,
+    required this.reactions,
+    required this.onReactionChanged,
+  });
+
+  @override
+  _ReactionFormState createState() => _ReactionFormState();
+}
+
+class _ReactionFormState extends State<ReactionForm> {
+  String selectedReaction = 'like';
+  int? myReactionId;
+
+  @override
+  Widget build(BuildContext context) {
+    final reaccionesDisponibles = {
+      'like': '👍',
+      'love': '❤️',
+      'angry': '😠',
+      'sad': '😢',
+      'goat': '🐐',
+    };
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 10,
+          children: reaccionesDisponibles.entries.map((entry) {
+            final isSelected = selectedReaction == entry.key;
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedReaction = entry.key;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.purple[300] : Colors.black45,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected ? Colors.deepPurple : Colors.transparent,
+                    width: 2,
+                  ),
+                ),
+                child: Text(
+                  entry.value,
+                  style: TextStyle(fontSize: 20, color: Colors.white),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Mutation(
+              options: MutationOptions(
+                document: gql(createReactionMutation),
+                onCompleted: (_) {
+                  widget.onReactionChanged();
+                },
+              ),
+              builder: (runMutation, result) {
+                return ElevatedButton.icon(
+                  onPressed: () {
+                    runMutation({
+                      "tweetId": widget.tweetId,
+                      "reactionType": selectedReaction,
+                    });
+                  },
+                  icon: const Icon(Icons.thumb_up, color: Colors.white),
+                  label: const Text(
+                    "Reaccionar",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor:
+                        Colors.purple[600], // Color morado para el botón
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -382,126 +467,6 @@ class _CommentFormState extends State<CommentForm> {
           ],
         );
       },
-    );
-  }
-}
-
-class ReactionForm extends StatefulWidget {
-  final int tweetId;
-  final List<dynamic> reactions;
-  final VoidCallback onReactionChanged;
-
-  const ReactionForm({
-    required this.tweetId,
-    required this.reactions,
-    required this.onReactionChanged,
-  });
-
-  @override
-  _ReactionFormState createState() => _ReactionFormState();
-}
-
-class _ReactionFormState extends State<ReactionForm> {
-  String selectedReaction = 'like';
-  int? myReactionId;
-
-  @override
-  void initState() {
-    super.initState();
-
-    final appState = context.read<MyAppState>();
-    final myReaction = widget.reactions.firstWhere(
-      (r) => r['user']?['username'] == appState.username,
-      orElse: () => null,
-    );
-
-    if (myReaction != null) {
-      myReactionId = int.tryParse(myReaction['id'].toString());
-      selectedReaction = myReaction['reactionType'] ?? 'like';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DropdownButton<String>(
-          value: selectedReaction,
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              setState(() {
-                selectedReaction = newValue;
-              });
-            }
-          },
-          items: <String>['like', 'love', 'angry', 'sad', 'goat']
-              .map(
-                (value) => DropdownMenuItem(
-                  value: value,
-                  child: Text(value.toUpperCase()),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            if (myReactionId != null)
-              Mutation(
-                options: MutationOptions(
-                  document: gql(deleteReactionMutation),
-                  onCompleted: (_) {
-                    widget.onReactionChanged();
-                  },
-                ),
-                builder: (runMutation, result) {
-                  return ElevatedButton.icon(
-                    onPressed: () {
-                      runMutation({"reactionId": myReactionId});
-                    },
-                    icon: const Icon(Icons.delete),
-                    label: const Text("Eliminar reacción"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                },
-              ),
-            const SizedBox(width: 8),
-            Mutation(
-              options: MutationOptions(
-                document: gql(createReactionMutation),
-                onCompleted: (_) {
-                  widget.onReactionChanged();
-                },
-              ),
-              builder: (runMutation, result) {
-                return ElevatedButton.icon(
-                  onPressed: () {
-                    if (myReactionId != null &&
-                        selectedReaction ==
-                            widget.reactions.firstWhere(
-                              (r) =>
-                                  r['id'].toString() == myReactionId.toString(),
-                              orElse: () => {},
-                            )['reactionType']) {
-                      runMutation({"reactionId": myReactionId});
-                    } else {
-                      runMutation({
-                        "tweetId": widget.tweetId,
-                        "reactionType": selectedReaction,
-                      });
-                    }
-                  },
-                  icon: const Icon(Icons.thumb_up),
-                  label: const Text("Reaccionar"),
-                );
-              },
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
